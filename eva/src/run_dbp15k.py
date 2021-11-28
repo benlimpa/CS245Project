@@ -357,6 +357,8 @@ def main(args, root_path=None):
                     ], dim=1)
 
                 final_emb = F.normalize(final_emb)
+                print("Saving final embeddings")
+                torch.save(final_emb, os.path.join(root_path, f"final_embed_{epoch}.pt"))
 
                 #top_k = [1, 5, 10, 50, 100]
                 top_k = [1, 10, 50]
