@@ -6,6 +6,7 @@ from __future__ import unicode_literals
 from __future__ import division
 from __future__ import print_function
 
+import os
 import time
 import argparse
 import gc
@@ -25,35 +26,7 @@ from models import *
 from Load import *
 
 
-def main():
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--file_dir", type=str, default="data/DBP15K/zh_en", required=False, help="input dataset file directory, ('data/DBP15K/zh_en', 'data/DWY100K/dbp_wd')")
-    parser.add_argument("--rate", type=float, default=0.3, help="training set rate")
-
-    parser.add_argument("--cuda", action="store_true", default=True, help="whether to use cuda or not")
-    parser.add_argument("--seed", type=int, default=2021, help="random seed")
-    parser.add_argument("--epochs", type=int, default=1000, help="number of epochs to train")
-    parser.add_argument("--check_point", type=int, default=100, help="check point")
-    parser.add_argument("--hidden_units", type=str, default="128,128,128", help="hidden units in each hidden layer(including in_dim and out_dim), splitted with comma")
-    parser.add_argument("--heads", type=str, default="2,2", help="heads in each gat layer, splitted with comma")
-    parser.add_argument("--instance_normalization", action="store_true", default=False, help="enable instance normalization")
-    parser.add_argument("--lr", type=float, default=0.005, help="initial learning rate")
-    parser.add_argument("--weight_decay", type=float, default=0, help="weight decay (L2 loss on parameters)")
-    parser.add_argument("--dropout", type=float, default=0.0, help="dropout rate for layers")
-    parser.add_argument("--attn_dropout", type=float, default=0.0, help="dropout rate for gat layers")
-    parser.add_argument("--dist", type=int, default=2, help="L1 distance or L2 distance. ('1', '2')")
-    parser.add_argument("--csls", action="store_true", default=False, help="use CSLS for inference")
-    parser.add_argument("--csls_k", type=int, default=10, help="top k for csls")
-    parser.add_argument("--il", action="store_true", default=False, help="Iterative learning?")
-    parser.add_argument("--semi_learn_step", type=int, default=10, help="If IL, what's the update step?")
-    parser.add_argument("--il_start", type=int, default=500, help="If Il, when to start?")
-    parser.add_argument("--bsize", type=int, default=7500, help="batch size")
-    parser.add_argument("--unsup", action="store_true", default=False)
-    parser.add_argument("--unsup_k", type=int, default=1000, help="|visual seed|")
-    #parser.add_argument("--long_tail_analysis", action="store_true", default=False)
-    parser.add_argument("--lta_split", type=int, default=0, help="split in {0,1,2,3,|splits|-1}")
-
-    args = parser.parse_args()
+def main(args, root_path=None):
     random.seed(args.seed)
     np.random.seed(args.seed)
     torch.manual_seed(args.seed)
@@ -90,7 +63,7 @@ def main():
         split = args.file_dir.split("/")[-1]
         img_vec_path = "data/pkls/"+ split+ "_GA_id_img_feature_dict.pkl"
     
-    img_features = load_img(ENT_NUM, img_vec_path)
+    img_features = load_img(ENT_NUM, os.path.join(root_path, img_vec_path))
 
     img_features = F.normalize(torch.Tensor(img_features).to(device))
     print ("image feature shape:", img_features.shape)
@@ -428,7 +401,7 @@ def main():
                             to_write.append([idx, rank, test_left_np[idx], test_right_np[idx], test_right_np[indices[0]], test_right_np[indices[1]], test_right_np[indices[2]]])
                     if epoch+1 == args.epochs:
                         import csv
-                        with open("logs/pred.txt", "w") as f:
+                        with open(os.path.join(root_path, "logs/pred.txt"), "w") as f:
                             wr = csv.writer(f, dialect='excel')
                             wr.writerows(to_write)
 
@@ -459,4 +432,32 @@ def main():
     print("[total time elapsed: {:.4f} s]".format(time.time() - t_total))
 
 if __name__ == "__main__":
-    main()
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--file_dir", type=str, default="data/DBP15K/zh_en", required=False, help="input dataset file directory, ('data/DBP15K/zh_en', 'data/DWY100K/dbp_wd')")
+    parser.add_argument("--rate", type=float, default=0.3, help="training set rate")
+
+    parser.add_argument("--cuda", action="store_true", default=True, help="whether to use cuda or not")
+    parser.add_argument("--seed", type=int, default=2021, help="random seed")
+    parser.add_argument("--epochs", type=int, default=1000, help="number of epochs to train")
+    parser.add_argument("--check_point", type=int, default=100, help="check point")
+    parser.add_argument("--hidden_units", type=str, default="128,128,128", help="hidden units in each hidden layer(including in_dim and out_dim), splitted with comma")
+    parser.add_argument("--heads", type=str, default="2,2", help="heads in each gat layer, splitted with comma")
+    parser.add_argument("--instance_normalization", action="store_true", default=False, help="enable instance normalization")
+    parser.add_argument("--lr", type=float, default=0.005, help="initial learning rate")
+    parser.add_argument("--weight_decay", type=float, default=0, help="weight decay (L2 loss on parameters)")
+    parser.add_argument("--dropout", type=float, default=0.0, help="dropout rate for layers")
+    parser.add_argument("--attn_dropout", type=float, default=0.0, help="dropout rate for gat layers")
+    parser.add_argument("--dist", type=int, default=2, help="L1 distance or L2 distance. ('1', '2')")
+    parser.add_argument("--csls", action="store_true", default=False, help="use CSLS for inference")
+    parser.add_argument("--csls_k", type=int, default=10, help="top k for csls")
+    parser.add_argument("--il", action="store_true", default=False, help="Iterative learning?")
+    parser.add_argument("--semi_learn_step", type=int, default=10, help="If IL, what's the update step?")
+    parser.add_argument("--il_start", type=int, default=500, help="If Il, when to start?")
+    parser.add_argument("--bsize", type=int, default=7500, help="batch size")
+    parser.add_argument("--unsup", action="store_true", default=False)
+    parser.add_argument("--unsup_k", type=int, default=1000, help="|visual seed|")
+    #parser.add_argument("--long_tail_analysis", action="store_true", default=False)
+    parser.add_argument("--lta_split", type=int, default=0, help="split in {0,1,2,3,|splits|-1}")
+
+    args = parser.parse_args()
+    main(args)
