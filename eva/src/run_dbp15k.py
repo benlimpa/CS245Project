@@ -26,7 +26,7 @@ from models import *
 from Load import *
 
 
-def main(args, root_path=None):
+def main(args, emb_sizes=(100,100,200), save_emb=True, root_path=None):
     random.seed(args.seed)
     np.random.seed(args.seed)
     torch.manual_seed(args.seed)
@@ -129,9 +129,9 @@ def main(args, root_path=None):
     att_features = torch.Tensor(att_features).to(device)
     print ("attribute feature shape:", att_features.shape)
     
-    rel_fc = nn.Linear(1000, 100).to(device)
-    att_fc = nn.Linear(1000, 100).to(device)
-    img_fc = nn.Linear(img_features.shape[1], 200).to(device)
+    rel_fc = nn.Linear(1000, emb_sizes[0]).to(device)
+    att_fc = nn.Linear(1000, emb_sizes[1]).to(device)
+    img_fc = nn.Linear(img_features.shape[1], emb_sizes[2]).to(device)
 
     print("-----dataset summary-----")
     print("dataset:\t", args.file_dir)
@@ -357,8 +357,9 @@ def main(args, root_path=None):
                     ], dim=1)
 
                 final_emb = F.normalize(final_emb)
-                print("Saving final embeddings")
-                torch.save(final_emb, os.path.join(root_path, f"final_embed_{epoch}.pt"))
+                if save_emb:
+                    print("Saving final embeddings")
+                    torch.save(final_emb, os.path.join(root_path, f"final_embed_{epoch}.pt"))
 
                 #top_k = [1, 5, 10, 50, 100]
                 top_k = [1, 10, 50]
