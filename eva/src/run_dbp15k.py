@@ -26,7 +26,12 @@ from models import *
 from Load import *
 
 
-def main(args, emb_sizes=(100,100,200), save_emb=True, root_path=None):
+def main(   args, 
+            img_features=None,
+            emb_sizes=(100,100,200), 
+            save_emb=True,
+            root_path=None,
+            verbose=True):
     random.seed(args.seed)
     np.random.seed(args.seed)
     torch.manual_seed(args.seed)
@@ -63,7 +68,8 @@ def main(args, emb_sizes=(100,100,200), save_emb=True, root_path=None):
         split = args.file_dir.split("/")[-1]
         img_vec_path = "data/pkls/"+ split+ "_GA_id_img_feature_dict.pkl"
     
-    img_features = load_img(ENT_NUM, os.path.join(root_path, img_vec_path))
+    if img_features is None:
+        img_features = load_img(ENT_NUM, os.path.join(root_path, img_vec_path))
 
     img_features = F.normalize(torch.Tensor(img_features).to(device))
     print ("image feature shape:", img_features.shape)
@@ -252,7 +258,8 @@ def main(args, emb_sizes=(100,100,200), save_emb=True, root_path=None):
         #print("loss_rel in epoch {:d}: {:f}, time: {:.4f} s".format(epoch, loss_sum_rel, time.time() - t_epoch))
         #print("loss_att in epoch {:d}: {:f}, time: {:.4f} s".format(epoch, loss_sum_att, time.time() - t_epoch))
         #print("loss_img in epoch {:d}: {:f}, time: {:.4f} s".format(epoch, loss_sum_img, time.time() - t_epoch))
-        print("[epoch {:d}] loss_all: {:f}, time: {:.4f} s".format(epoch, loss_sum_all, time.time() - t_epoch))
+        if verbose:
+            print("[epoch {:d}] loss_all: {:f}, time: {:.4f} s".format(epoch, loss_sum_all, time.time() - t_epoch))
 
         del joint_emb, gph_emb, img_emb, rel_emb, att_emb
 
@@ -433,6 +440,7 @@ def main(args, emb_sizes=(100,100,200), save_emb=True, root_path=None):
 
     print("[optimization finished!]")
     print("[total time elapsed: {:.4f} s]".format(time.time() - t_total))
+    return acc_l2r, acc_r2l, mean_l2r, mean_r2l, mrr_l2r, mrr_r2l
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
